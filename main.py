@@ -19,4 +19,5 @@ async def log_trade(trade: TradeEntry):
 
 @app.get("/get_price/")
 def get_price(ticker: str):
+    print(f"✅ GPT hit /get_price for {ticker}")  # log to Render
     return fetch_latest_price(ticker)
