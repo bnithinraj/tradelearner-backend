@@ -1,35 +1,35 @@
 from fastapi import FastAPI
-from polygon_utils import get_price
+import requests
 import os
-import uvicorn
 
 app = FastAPI()
+POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
 
-# A+ Scanner Logic
-def score_a_plus_setup(price_data):
-    price = price_data.get("polygon_data", {}).get("results", {}).get("p")
-    volume = price_data.get("polygon_data", {}).get("results", {}).get("v", 0)
+@app.get("/public_price")
+def get_price(ticker: str):
+    url = f"https://api.polygon.io/v2/last/trade/stocks/{ticker}"
+    response = requests.get(url, params={"apikey": POLYGON_API_KEY})
 
-    # Basic mock A+ rules (replace with full rule logic as needed)
-    if not price:
-        return {"error": "No price data"}
-    
-    score = {
-        "price": price,
-        "volume": volume,
-        "grade": "A+" if price > 5 and volume > 500000 else "B"
+    if response.ok:
+        data = response.json()
+        return {
+            "price": data["results"]["p"],
+            "timestamp": data["results"]["t"]
+        }
+    else:
+        return {
+            "error": "Polygon fetch failed",
+            "status_code": response.status_code
+        }
+
+@app.get("/health")
+def health():
+    return { "status": "ok" }
+
+@app.get("/")
+def index():
+    return {
+        "service": "Live Polygon Stock Price API for GPT",
+        "status": "running",
+        "example": "/public_price?ticker=AAPL"
     }
-    return score
-
-@app.get("/get_price")
-def get_price_endpoint(ticker: str):
-    return get_price(ticker)
-
-@app.get("/scan_price")
-def scan_price_endpoint(ticker: str):
-    price_data = get_price(ticker)
-    return score_a_plus_setup(price_data)
-
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
