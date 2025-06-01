@@ -1,7 +1,8 @@
 app = "tradelearner-backend"
+primary_region = "iad"
 
 [build]
-  image = "python:3.10"
+  dockerfile = "Dockerfile"
 
 [env]
   PORT = "8080"
@@ -17,3 +18,4 @@ app = "tradelearner-backend"
   [[services.ports]]
     handlers = ["tls", "http"]
     port = 443
+
