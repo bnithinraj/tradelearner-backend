@@ -1,18 +1,33 @@
-from fastapi import FastAPI, Request
-import httpx
 import os
+import requests
+from flask import jsonify, request
 
-app = FastAPI()
+def handler(req):
+    try:
+        symbol = req.args.get("symbol", "AAPL").upper()
+        api_key = os.getenv("POLYGON_API_KEY")
+        if not api_key:
+            return jsonify({"error": "Missing POLYGON_API_KEY"}), 500
 
-@app.get("/api/public_price")
-async def get_price(symbol: str = "AAPL"):
-    api_key = os.environ.get("POLYGON_API_KEY")
-    url = f"https://api.polygon.io/v2/last/trade/stocks/{symbol}?apiKey={api_key}"
-    async with httpx.AsyncClient() as client:
-        res = await client.get(url)
-        data = res.json()
-    return {
-        "symbol": symbol,
-        "price": data.get("last", {}).get("price"),
-        "timestamp": data.get("last", {}).get("timestamp")
-    }
+        url = f"https://api.polygon.io/v2/last/trade/{symbol}?apiKey={api_key}"
+        response = requests.get(url)
+        if response.status_code != 200:
+            return jsonify({
+                "error": "Failed to fetch price",
+                "status_code": response.status_code,
+                "details": response.text
+            }), response.status_code
+
+        data = response.json()
+        price = data.get("results", {}).get("p")  # 'p' = price
+        if price is None:
+            return jsonify({"error": "Price not found in response"}), 500
+
+        return jsonify({
+            "symbol": symbol,
+            "price": price
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
