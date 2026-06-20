@@ -5,3 +5,4 @@
 3. Deploy.
 4. Test it via:
    https://your-vercel-project.vercel.app/api/public_price?symbol=MVST
+   https://your-vercel-project.vercel.app/get_price/?ticker=MVST
